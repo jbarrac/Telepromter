@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karaoke Lyrics Scroller (web)</title>
+    <!-- Import modern font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            /* Deep blue/slate background */
+            --surface-color: #1e293b;
+            --surface-hover: #334155;
+            --text-color: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary-color: #6366f1;
+            /* Indigo */
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --secondary-color: #10b981;
+            /* Emerald */
+            --danger-color: #ef4444;
+            --font-main: 'Montserrat', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--surface-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #334155;
+            box-shadow: var(--shadow);
+            z-index: 10;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .controls-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius);
+            border: 1px solid #334155;
+        }
+
+        .label-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Buttons */
+        button {
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text-muted);
+            border: 1px solid #475569;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-color);
+            color: var(--text-color);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Icon Buttons */
+        .icon-btn {
+            background-color: transparent;
+            padding: 0.4rem;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            color: var(--text-color);
+            background-color: var(--surface-hover);
+        }
+
+        .icon-btn.active {
+            background-color: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .icon-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Range Sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            background: transparent;
+            width: 100px;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #475569;
+            border-radius: 2px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #fff;
+            margin-top: -5px;
+            cursor: pointer;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .value-display {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-color);
+            min-width: 3.5ch;
+            text-align: right;
+        }
+
+        /* Main Layout */
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Layout Modes Logic */
+        main[data-layout="split"] .pane {
+            display: flex;
+        }
+
+        main[data-layout="editor"] #editor-pane {
+            display: flex;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        main[data-layout="editor"] #viewer-pane {
+            display: none;
+        }
+
+        main[data-layout="editor"] {
+            background-color: var(--bg-color);
+        }
+
+        main[data-layout="viewer"] #editor-pane {
+            display: none;
+        }
+
+        main[data-layout="viewer"] #viewer-pane {
+            display: flex;
+            width: 100%;
+        }
+
+        .pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            min-width: 0;
+            transition: all 0.3s ease;
+        }
+
+        .pane-header {
+            margin-bottom: 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Editor */
+        #editor {
+            width: 100%;
+            height: 100%;
+            background-color: var(--surface-color);
+            color: var(--text-color);
+            border: 1px solid #334155;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        #editor:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Viewer */
+        #viewer-container {
+            flex: 1;
+            background-color: #000;
+            border: 1px solid #333;
+            border-radius: var(--radius);
+            overflow-y: auto;
+            position: relative;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #viewer {
+            padding: 3rem 2rem 80vh 2rem;
+            white-space: pre-wrap;
+            font-size: 32px;
+            /* Default */
+            line-height: 1.5;
+            text-align: center;
+            font-weight: 600;
+            color: #fff;
+            transition: font-size 0.1s;
+            /* Smooth resize */
+        }
+
+        /* Aesthetic Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="brand">
+            <svg style="width:24px;height:24px;fill:url(#grad1)" viewBox="0 0 24 24">
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <path
+                    d="M12 13.535V3h8v3h-6v11a4 4 0 1 1-2-1.535zM2 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h16v6h-2V6H4v12h9v2H2z"
+                    opacity="0.5" />
+                <path d="M15 3h6v2h-6z" />
+            </svg>
+            <h1>Karaoke Lyrics Scroller <span style="font-size:0.8rem; opacity:0.6; font-weight:400;">(web)</span></h1>
+        </div>
+
+        <div class="toolbar">
+            <!-- Layout Controls -->
+            <div class="controls-group">
+                <button class="icon-btn active" id="layout-split" title="Split View">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 14h7V6H4v12zm9 0h7V6h-7v12z" />
+                    </svg>
+                </button>
+                <button class="icon-btn" id="layout-viewer" title="Viewer Only">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 14h16V6H4v12z" />
+                    </svg>
+                </button>
+                <button class="icon-btn" id="layout-editor" title="Editor Only">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Settings -->
+            <div class="controls-group">
+                <span class="label-text">Size</span>
+                <input type="range" id="font-size" min="16" max="120" value="32">
+                <span id="font-size-value" class="value-display">32px</span>
+            </div>
+
+            <div class="controls-group">
+                <span class="label-text">Speed</span>
+                <input type="range" id="speed" min="10" max="250" value="50">
+                <span id="speed-value" class="value-display">50</span>
+            </div>
+
+            <!-- Playback -->
+            <div style="display:flex; gap:0.5rem;">
+                <button id="btn-reset" class="btn-secondary">Reset</button>
+                <button id="btn-play" class="btn-primary">Play</button>
+            </div>
+        </div>
+    </header>
+
+    <main data-layout="split">
+        <div class="pane" id="editor-pane">
+            <div class="pane-header">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                Editor
+            </div>
+            <textarea id="editor" placeholder="Paste your lyrics here..."></textarea>
+        </div>
+        <div class="pane" id="viewer-pane">
+            <div class="pane-header">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                    <circle cx="9" cy="9" r="2" />
+                </svg>
+                Teleprompter
+            </div>
+            <div id="viewer-container">
+                <div id="viewer"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // DOM Elements
+        const editor = document.getElementById('editor');
+        const viewer = document.getElementById('viewer');
+        const viewerContainer = document.getElementById('viewer-container');
+        const btnPlay = document.getElementById('btn-play');
+        const btnReset = document.getElementById('btn-reset');
+
+        const speedInput = document.getElementById('speed');
+        const speedValue = document.getElementById('speed-value');
+
+        const fontSizeInput = document.getElementById('font-size');
+        const fontSizeValue = document.getElementById('font-size-value');
+
+        const mainContainer = document.querySelector('main');
+
+        // Layout buttons
+        const btnLayoutSplit = document.getElementById('layout-split');
+        const btnLayoutViewer = document.getElementById('layout-viewer');
+        const btnLayoutEditor = document.getElementById('layout-editor');
+        const layoutBtns = [btnLayoutSplit, btnLayoutViewer, btnLayoutEditor];
+
+        // State
+        let isPlaying = false;
+        let speed = parseInt(speedInput.value, 10);
+        let lastFrameTime = 0;
+        let animationFrameId = null;
+        let preciseScrollTop = 0; // Accumulator for sub-pixel precision
+
+        // Sync Editor to Viewer
+        editor.addEventListener('input', () => {
+            viewer.textContent = editor.value;
+        });
+
+        // Controls: Speed
+        speedInput.addEventListener('input', (e) => {
+            speed = parseInt(e.target.value, 10);
+            speedValue.textContent = speed;
+        });
+
+        // Controls: Font Size
+        fontSizeInput.addEventListener('input', (e) => {
+            const size = e.target.value;
+            viewer.style.fontSize = `${size}px`;
+            fontSizeValue.textContent = `${size}px`;
+        });
+
+        // Layout Switching
+        function setLayout(mode, activeBtn) {
+            mainContainer.setAttribute('data-layout', mode);
+            layoutBtns.forEach(btn => btn.classList.remove('active'));
+            activeBtn.classList.add('active');
+        }
+
+        btnLayoutSplit.addEventListener('click', () => setLayout('split', btnLayoutSplit));
+        btnLayoutViewer.addEventListener('click', () => setLayout('viewer', btnLayoutViewer));
+        btnLayoutEditor.addEventListener('click', () => setLayout('editor', btnLayoutEditor));
+
+        // Play/Pause Toggle
+        btnPlay.addEventListener('click', togglePlay);
+
+        function togglePlay() {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        }
+
+        function play() {
+            if (isPlaying) return;
+            isPlaying = true;
+            btnPlay.textContent = 'Pause';
+            btnPlay.style.background = 'transparent';
+            btnPlay.style.border = '1px solid var(--danger-color)'; // Red border
+            btnPlay.style.color = 'var(--danger-color)';
+
+            // Start the loop
+            lastFrameTime = performance.now();
+            preciseScrollTop = viewerContainer.scrollTop; // Sync with current DOM position
+            animationFrameId = requestAnimationFrame(loop);
+        }
+
+        function pause() {
+            if (!isPlaying) return;
+            isPlaying = false;
+            btnPlay.textContent = 'Play';
+            // Restore primary style
+            btnPlay.style.background = 'var(--primary-gradient)';
+            btnPlay.style.border = 'none';
+            btnPlay.style.color = 'white';
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        }
+
+        // Reset Control
+        btnReset.addEventListener('click', () => {
+            pause();
+            viewerContainer.scrollTop = 0;
+            preciseScrollTop = 0;
+        });
+
+        // Autoscroll Loop
+        function loop(timestamp) {
+            if (!isPlaying) return;
+
+            const deltaTime = (timestamp - lastFrameTime) / 1000; // in seconds
+            lastFrameTime = timestamp;
+
+            // Check if user manually scrolled (difference between expected and actual is significant)
+            // We use a threshold of 1px to avoid micro-jitters
+            if (Math.abs(viewerContainer.scrollTop - preciseScrollTop) > 1) {
+                preciseScrollTop = viewerContainer.scrollTop;
+            }
+
+            // Check if we reached the end
+            const maxScroll = viewerContainer.scrollHeight - viewerContainer.clientHeight;
+
+            // Allow a small buffer (1px)
+            if (viewerContainer.scrollTop >= maxScroll - 1 && maxScroll > 0) {
+                pause();
+                return;
+            }
+
+            // Scroll
+            const pixelsToScroll = speed * deltaTime;
+            preciseScrollTop += pixelsToScroll; // Accumulate in float
+            viewerContainer.scrollTop = preciseScrollTop; // Apply to DOM
+
+            // Continue loop
+            animationFrameId = requestAnimationFrame(loop);
+        }
+
+        // Initial render if there's any text
+        viewer.textContent = editor.value;
+        // Set initial font size
+        viewer.style.fontSize = `${fontSizeInput.value}px`;
+
+
+        // Spacebar shortcut
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && document.activeElement !== editor) {
+                e.preventDefault();
+                togglePlay();
+            }
+        });
+    </script>
+</body>
+
+</html>
