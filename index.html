@@ -74,9 +74,24 @@
             display: flex;
             align-items: center;
             gap: 1.5rem;
+            overflow-x: auto;
+            max-width: 100%;
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE 10+ */
+            padding-right: 1rem;
+            /* Space for end items */
+        }
+
+        .toolbar::-webkit-scrollbar {
+            display: none;
+            /* Chrome/Safari */
         }
 
         .controls-group {
+            flex-shrink: 0;
+            /* Prevent squashing */
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -472,6 +487,37 @@
             font-size: 0.875rem;
             border-bottom: 2px solid #1e293b;
         }
+
+        /* Floating Exit Button */
+        #btn-exit-fullscreen {
+            display: none;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            /* Highest z-index */
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+
+        #btn-exit-fullscreen:hover {
+            background: rgba(239, 68, 68, 0.8);
+            /* Red hover */
+            border-color: transparent;
+        }
+
+        body.fullscreen-mode #btn-exit-fullscreen {
+            display: flex;
+        }
     </style>
 </head>
 
@@ -596,6 +642,12 @@
                     <span id="countdown-number">3</span>
                 </div>
             </div>
+            <!-- Floating Exit Button (Visible only in fullscreen) -->
+            <button id="btn-exit-fullscreen" title="Salir de Pantalla Completa">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
     </main>
 
@@ -739,6 +791,7 @@
         const btnHelp = document.getElementById('btn-help');
         const helpModal = document.getElementById('help-modal');
         const btnCloseHelp = document.getElementById('btn-close-help');
+        const btnExitFullscreen = document.getElementById('btn-exit-fullscreen');
 
         function toggleHelp(show) {
             if (show) {
@@ -750,6 +803,11 @@
 
         btnHelp.addEventListener('click', () => toggleHelp(true));
         btnCloseHelp.addEventListener('click', () => toggleHelp(false));
+
+        btnExitFullscreen.addEventListener('click', () => {
+            document.body.classList.remove('fullscreen-mode');
+            btnFullscreen.classList.remove('active');
+        });
 
         helpModal.addEventListener('click', (e) => {
             if (e.target === helpModal) toggleHelp(false);
