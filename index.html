@@ -318,6 +318,26 @@
             /* Smooth resize */
         }
 
+        /* Viewer Placeholder */
+        .viewer-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #475569;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            pointer-events: none;
+            width: 80%;
+            display: none;
+            /* Hidden by default, toggled via JS */
+        }
+
+        .viewer-placeholder.visible {
+            display: block;
+        }
+
         /* Aesthetic Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -474,49 +494,130 @@
         }
 
         .help-table th {
-            color: #94a3b8;
-            font-weight: 600;
-            font-size: 0.875rem;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            min-width: 250px;
+            top: 60px;
+            /* Below toolbar */
+            right: 1rem;
+            /* Aligned to right */
         }
 
-        .key-badge {
+        .menu-divider {
+            height: 1px;
             background: #334155;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.875rem;
-            border-bottom: 2px solid #1e293b;
+            margin: 1rem 0;
         }
 
-        /* Floating Exit Button */
-        #btn-exit-fullscreen {
-            display: none;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 10001;
-            /* Highest z-index */
-            background: rgba(0, 0, 0, 0.5);
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .menu-item:hover {
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .menu-item span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Toggle Switch style for menu items */
+        .toggle-switch {
+            width: 36px;
+            height: 20px;
+            background: #334155;
+            border-radius: 99px;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: white;
             border-radius: 50%;
-            width: 44px;
-            height: 44px;
+            transition: transform 0.2s;
+        }
+
+        .menu-item.active .toggle-switch {
+            background: #6366f1;
+        }
+
+        .menu-item.active .toggle-switch::after {
+            transform: translateX(16px);
+        }
+
+        /* Fullscreen Controls Group (Bottom Right) */
+        .fs-controls-group {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 99999;
+            /* Ensure strictly above viewer (9999) */
+            pointer-events: none;
+            /* Container doesn't block, buttons do */
+        }
+
+        .fs-fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            backdrop-filter: blur(4px);
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
         }
 
-        #btn-exit-fullscreen:hover {
-            background: rgba(239, 68, 68, 0.8);
-            /* Red hover */
+        .fs-fab:hover {
+            background: rgba(99, 102, 241, 0.9);
+            transform: translateY(0) scale(1.1);
             border-color: transparent;
         }
 
-        body.fullscreen-mode #btn-exit-fullscreen {
-            display: flex;
+        .fs-fab.danger:hover {
+            background: rgba(239, 68, 68, 0.9);
+        }
+
+        body.fullscreen-mode .fs-fab {
+            opacity: 1;
+            /* Always visible in FS, or auto-hide? User said "flotante", usually implies persistent or auto-hide. Let's stick to auto-hide behavior but applied to these buttons using the existing logic */
+            transform: translateY(0) scale(1);
+        }
+
+        /* Apply auto-hide logic via class */
+        body.fullscreen-mode .fs-controls-group.hidden-state .fs-fab {
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+            pointer-events: none;
+        }
+
+        /* Hide Top-Right Exit Button */
+        #btn-exit-fullscreen {
+            display: none !important;
         }
     </style>
 </head>
@@ -543,22 +644,10 @@
         <div class="toolbar">
             <!-- Layout Controls -->
             <div class="controls-group">
-                <button class="icon-btn active" id="layout-split" title="Controles + Editor">
+                <button class="icon-btn active" id="btn-layout-cycle" title="Cambiar Vista (Split)">
                     <svg viewBox="0 0 24 24">
                         <path
                             d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 14h7V6H4v12zm9 0h7V6h-7v12z" />
-                    </svg>
-                </button>
-                <button class="icon-btn" id="layout-editor" title="Solo Editor">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                    </svg>
-                </button>
-                <button class="icon-btn" id="layout-viewer" title="Solo Visor">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 14h16V6H4v12z" />
                     </svg>
                 </button>
                 <button class="icon-btn" id="btn-fullscreen" title="Pantalla Completa">
@@ -568,34 +657,73 @@
                 </button>
             </div>
 
-            <!-- Pro Tools -->
-            <div class="controls-group">
-                <button class="icon-btn" id="btn-countdown" title="Cuenta Atrás (3s)" style="opacity: 0.5;">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-.22-13h-.06c-.4 0-.72.32-.72.72v4.72c0 .35.18.68.49.86l4.15 2.49c.34.2.78.1.98-.24.21-.34.1-.79-.25-.99l-3.87-2.3V7.72c0-.4-.32-.72-.72-.72z" />
-                    </svg>
-                </button>
-                <button class="icon-btn" id="btn-mirror" title="Modo Espejo (Flip)">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"
-                            transform="scale(-1 1) translate(-24 0)" />
-                    </svg>
-                </button>
-            </div>
-
             <!-- Settings -->
             <div class="controls-group">
-                <span class="label-text">Size</span>
-                <input type="range" id="font-size" min="16" max="150" value="48">
-                <span id="font-size-value" class="value-display">48px</span>
+                <button class="icon-btn" id="btn-settings" title="Ajustes">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.04.17 0 .36.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.04-.22 0-.45-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                    </svg>
+                </button>
             </div>
 
-            <div class="controls-group">
-                <span class="label-text">Speed</span>
-                <input type="range" id="speed" min="0" max="300" value="50">
-                <span id="speed-value" class="value-display">50</span>
+            <!-- Settings Popover (Hidden by default) -->
+            <div id="settings-popover" class="popover-menu hidden">
+                <div style="margin-bottom: 1rem;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                        <span class="label-text">Tamaño</span>
+                        <span id="font-size-value" class="value-display">48px</span>
+                    </div>
+                    <input type="range" id="font-size" min="16" max="150" value="48" style="width:100%">
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                        <span class="label-text">Velocidad</span>
+                        <span id="speed-value" class="value-display">50</span>
+                    </div>
+                    <input type="range" id="speed" min="0" max="300" value="50" style="width:100%">
+                </div>
+
+                <div class="menu-divider"></div>
+
+                <!-- Toggles in Menu -->
+                <div class="menu-item" id="btn-mirror">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"
+                                transform="scale(-1 1) translate(-24 0)" />
+                        </svg>
+                        <span>Modo Espejo</span>
+                    </div>
+                    <div class="toggle-switch"></div>
+                </div>
+
+                <div class="menu-item" id="btn-countdown">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24">
+                            <path
+                                d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.59 8 8-3.58 8-8 8zm-.22-13h-.06c-.4 0-.72.32-.72.72v4.72c0 .35.18.68.49.86l4.15 2.49c.34.2.78.1.98-.24.21-.34.1-.79-.25-.99l-3.87-2.3V7.72c0-.4-.32-.72-.72-.72z" />
+                        </svg>
+                        <span>Cuenta Atrás</span>
+                    </div>
+                    <div class="toggle-switch"></div>
+                </div>
+
+                <div class="menu-divider"></div>
+
+                <div class="menu-item" id="btn-help">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+                        </svg>
+                        <span>Ayuda y Atajos</span>
+                    </div>
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+                    </svg>
+                </div>
             </div>
 
             <!-- Playback -->
@@ -603,40 +731,23 @@
                 <button id="btn-reset" class="btn-secondary">Reset</button>
                 <button id="btn-play" class="btn-primary">Play</button>
             </div>
-
-            <!-- Help -->
-            <div class="controls-group" style="margin-left: auto;">
-                <button class="icon-btn" id="btn-help" title="Ayuda / Atajos">
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
-                    </svg>
-                </button>
-            </div>
         </div>
     </header>
 
     <main data-layout="split">
         <div class="pane" id="editor-pane">
-            <div class="pane-header">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Editor
-            </div>
-            <textarea id="editor" placeholder="Paste your lyrics here..."></textarea>
+            <textarea id="editor" placeholder="Paste your text or lyrics here..."></textarea>
         </div>
         <div class="pane" id="viewer-pane">
-            <div class="pane-header">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                    <circle cx="9" cy="9" r="2" />
-                </svg>
-                Teleprompter
-            </div>
             <div id="viewer-container">
                 <div id="viewer"></div>
+                <!-- Placeholder -->
+                <div id="viewer-placeholder" class="viewer-placeholder visible">
+                    Teleprompter Display<br>
+                    <span
+                        style="font-size: 1rem; opacity: 0.7; font-weight: 400; margin-top:0.5rem; display:block;">Paste
+                        your text in the Editor to start</span>
+                </div>
                 <!-- Features Overlays -->
                 <div id="countdown-overlay" class="countdown-overlay hidden">
                     <span id="countdown-number">3</span>
@@ -702,6 +813,20 @@
         </div>
     </div>
 
+    <!-- Fullscreen Floating Controls (Bottom Right) -->
+    <div id="fs-controls" class="fs-controls-group hidden-state">
+        <button class="fs-fab" id="fs-btn-play" title="Play/Pause">
+            <svg width="24" height="24" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+            </svg>
+        </button>
+        <button class="fs-fab danger" id="fs-btn-exit" title="Salir de Pantalla Completa">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
     <script>
         // DOM Elements
         const editor = document.getElementById('editor');
@@ -717,6 +842,7 @@
         const fontSizeValue = document.getElementById('font-size-value');
 
         const mainContainer = document.querySelector('main');
+        const viewerPlaceholder = document.getElementById('viewer-placeholder');
 
         // New Feature Elements
         const btnMirror = document.getElementById('btn-mirror');
@@ -725,11 +851,8 @@
         const countdownOverlay = document.getElementById('countdown-overlay');
         const countdownNumber = document.getElementById('countdown-number');
 
-        // Layout buttons
-        const btnLayoutSplit = document.getElementById('layout-split');
-        const btnLayoutViewer = document.getElementById('layout-viewer');
-        const btnLayoutEditor = document.getElementById('layout-editor');
-        const layoutBtns = [btnLayoutSplit, btnLayoutViewer, btnLayoutEditor];
+        // Layout buttons (Removed old individual buttons)
+        /* const btnLayoutSplit... replaced by cycle logic */
 
         // State
         let isPlaying = false;
@@ -741,10 +864,17 @@
         let preciseScrollTop = 0;
         let countdownTimer = null;
 
-        // Sync Editor to Viewer
-        editor.addEventListener('input', () => {
+        // Sync Editor to Viewer and Toggle Placeholder
+        function syncViewer() {
             viewer.textContent = editor.value;
-        });
+            if (editor.value.trim().length > 0) {
+                viewerPlaceholder.classList.remove('visible');
+            } else {
+                viewerPlaceholder.classList.add('visible');
+            }
+        }
+
+        editor.addEventListener('input', syncViewer);
 
         // Controls: Speed
         function updateSpeed(newSpeed) {
@@ -764,7 +894,7 @@
             fontSizeValue.textContent = `${size}px`;
         });
 
-        // Toggles
+        // Toggles (Now in Menu)
         btnMirror.addEventListener('click', () => {
             // Apply flip to the content container
             viewer.classList.toggle('mirror-mode');
@@ -775,16 +905,19 @@
             isCountdownEnabled = !isCountdownEnabled;
             if (isCountdownEnabled) {
                 btnCountdown.classList.add('active');
-                btnCountdown.style.opacity = '1';
             } else {
                 btnCountdown.classList.remove('active');
-                btnCountdown.style.opacity = '0.5';
             }
         });
 
         btnFullscreen.addEventListener('click', () => {
             document.body.classList.toggle('fullscreen-mode');
             btnFullscreen.classList.toggle('active');
+
+            // Show controls immediately when entering fullscreen
+            if (document.body.classList.contains('fullscreen-mode')) {
+                showFsControls();
+            }
         });
 
         // Help Modal Logic
@@ -830,16 +963,51 @@
         });
 
 
-        // Layout Switching
-        function setLayout(mode, activeBtn) {
-            mainContainer.setAttribute('data-layout', mode);
-            layoutBtns.forEach(btn => btn.classList.remove('active'));
-            activeBtn.classList.add('active');
+        // Layout Cycle Logic
+        const btnLayoutCycle = document.getElementById('btn-layout-cycle');
+        const layouts = [
+            { id: 'split', title: 'Cambiar Vista (Split)', icon: '<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 14h7V6H4v12zm9 0h7V6h-7v12z" />' },
+            { id: 'editor', title: 'Cambiar Vista (Editor)', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />' },
+            { id: 'viewer', title: 'Cambiar Vista (Visor)', icon: '<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 14h16V6H4v12z" />' }
+        ];
+        let currentLayoutIndex = 0;
+
+        function updateLayout() {
+            const layout = layouts[currentLayoutIndex];
+            mainContainer.setAttribute('data-layout', layout.id);
+            btnLayoutCycle.title = layout.title;
+            btnLayoutCycle.querySelector('svg').innerHTML = layout.icon;
         }
 
-        btnLayoutSplit.addEventListener('click', () => setLayout('split', btnLayoutSplit));
-        btnLayoutViewer.addEventListener('click', () => setLayout('viewer', btnLayoutViewer));
-        btnLayoutEditor.addEventListener('click', () => setLayout('editor', btnLayoutEditor));
+        btnLayoutCycle.addEventListener('click', () => {
+            currentLayoutIndex = (currentLayoutIndex + 1) % layouts.length;
+            updateLayout();
+        });
+
+        // Settings Popover Logic
+        const btnSettings = document.getElementById('btn-settings');
+        const settingsPopover = document.getElementById('settings-popover');
+
+        btnSettings.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = settingsPopover.classList.contains('hidden');
+            // Close others if needed
+            if (isHidden) {
+                settingsPopover.classList.remove('hidden');
+                btnSettings.classList.add('active');
+            } else {
+                settingsPopover.classList.add('hidden');
+                btnSettings.classList.remove('active');
+            }
+        });
+
+        // Close popover when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!settingsPopover.contains(e.target) && e.target !== btnSettings && !btnSettings.contains(e.target)) {
+                settingsPopover.classList.add('hidden');
+                btnSettings.classList.remove('active');
+            }
+        });
 
         // Play/Pause Toggle
         btnPlay.addEventListener('click', togglePlay);
@@ -988,8 +1156,65 @@
             }
         });
 
+        // Fullscreen Controls Logic
+        const fsControls = document.getElementById('fs-controls');
+        // const fsBtnReset = document.getElementById('fs-btn-reset'); // Removed
+        const fsBtnPlay = document.getElementById('fs-btn-play');
+        const fsBtnExit = document.getElementById('fs-btn-exit');
+        // Speed buttons removed from FS view
+        let fsHideTimer = null;
+
+        function showFsControls() {
+            if (!document.body.classList.contains('fullscreen-mode')) return;
+            fsControls.classList.remove('hidden-state'); // Show
+
+            if (fsHideTimer) clearTimeout(fsHideTimer);
+            fsHideTimer = setTimeout(() => {
+                fsControls.classList.add('hidden-state'); // Hide
+            }, 3000);
+        }
+
+        document.addEventListener('mousemove', showFsControls);
+        document.addEventListener('touchstart', showFsControls);
+        document.addEventListener('click', showFsControls);
+
+        // FS Buttons Proxies
+        fsBtnExit.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.body.classList.remove('fullscreen-mode');
+            btnFullscreen.classList.remove('active');
+        });
+
+        fsBtnPlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Manually trigger show to keep it persistent while interacting
+            showFsControls();
+
+            // Logic
+            togglePlay();
+            updateFsPlayIcon();
+        });
+
+        // Watch for Play state to update icon
+        function updateFsPlayIcon() {
+            requestAnimationFrame(() => {
+                if (isPlaying) {
+                    fsBtnPlay.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'; // Pause icon
+                } else {
+                    fsBtnPlay.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'; // Play icon
+                }
+            });
+        }
+
+        // Hook into existing togglePlay to update icon
+        const originalTogglePlay = togglePlay;
+        togglePlay = function () {
+            originalTogglePlay();
+            updateFsPlayIcon();
+        };
+
         // Initial render
-        viewer.textContent = editor.value;
+        syncViewer();
         viewer.style.fontSize = `${fontSizeInput.value}px`;
     </script>
 </body>
