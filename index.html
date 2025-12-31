@@ -321,6 +321,157 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
+
+        /* Features & Utils */
+        .hidden {
+            display: none !important;
+        }
+
+        .mirror-mode {
+            transform: scaleX(-1);
+        }
+
+        .countdown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            backdrop-filter: blur(4px);
+        }
+
+        #countdown-number {
+            font-size: 8rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0.9);
+                opacity: 0.8;
+            }
+        }
+
+        /* Fullscreen modifications */
+        body.fullscreen-mode header {
+            display: none;
+        }
+
+        body.fullscreen-mode #editor-pane {
+            display: none;
+        }
+
+        body.fullscreen-mode #viewer-pane {
+            padding: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            border-radius: 0;
+            border: none;
+            display: flex !important;
+        }
+
+        /* Hide header in full screen viewer pane */
+        body.fullscreen-mode #viewer-pane .pane-header {
+            display: none;
+        }
+
+        body.fullscreen-mode #viewer-container {
+            border-radius: 0;
+            border: none;
+        }
+
+        /* Help Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #1e293b;
+            color: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+        }
+
+        .help-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .help-table th,
+        .help-table td {
+            text-align: left;
+            padding: 0.5rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        .help-table th {
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .key-badge {
+            background: #334155;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.875rem;
+            border-bottom: 2px solid #1e293b;
+        }
     </style>
 </head>
 
@@ -346,22 +497,44 @@
         <div class="toolbar">
             <!-- Layout Controls -->
             <div class="controls-group">
-                <button class="icon-btn active" id="layout-split" title="Split View">
+                <button class="icon-btn active" id="layout-split" title="Controles + Editor">
                     <svg viewBox="0 0 24 24">
                         <path
                             d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 14h7V6H4v12zm9 0h7V6h-7v12z" />
                     </svg>
                 </button>
-                <button class="icon-btn" id="layout-viewer" title="Viewer Only">
+                <button class="icon-btn" id="layout-editor" title="Solo Editor">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                    </svg>
+                </button>
+                <button class="icon-btn" id="layout-viewer" title="Solo Visor">
                     <svg viewBox="0 0 24 24">
                         <path
                             d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 14h16V6H4v12z" />
                     </svg>
                 </button>
-                <button class="icon-btn" id="layout-editor" title="Editor Only">
+                <button class="icon-btn" id="btn-fullscreen" title="Pantalla Completa">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Pro Tools -->
+            <div class="controls-group">
+                <button class="icon-btn" id="btn-countdown" title="Cuenta Atrás (3s)" style="opacity: 0.5;">
                     <svg viewBox="0 0 24 24">
                         <path
-                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                            d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-.22-13h-.06c-.4 0-.72.32-.72.72v4.72c0 .35.18.68.49.86l4.15 2.49c.34.2.78.1.98-.24.21-.34.1-.79-.25-.99l-3.87-2.3V7.72c0-.4-.32-.72-.72-.72z" />
+                    </svg>
+                </button>
+                <button class="icon-btn" id="btn-mirror" title="Modo Espejo (Flip)">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"
+                            transform="scale(-1 1) translate(-24 0)" />
                     </svg>
                 </button>
             </div>
@@ -369,13 +542,13 @@
             <!-- Settings -->
             <div class="controls-group">
                 <span class="label-text">Size</span>
-                <input type="range" id="font-size" min="16" max="120" value="32">
-                <span id="font-size-value" class="value-display">32px</span>
+                <input type="range" id="font-size" min="16" max="150" value="48">
+                <span id="font-size-value" class="value-display">48px</span>
             </div>
 
             <div class="controls-group">
                 <span class="label-text">Speed</span>
-                <input type="range" id="speed" min="10" max="250" value="50">
+                <input type="range" id="speed" min="0" max="300" value="50">
                 <span id="speed-value" class="value-display">50</span>
             </div>
 
@@ -383,6 +556,16 @@
             <div style="display:flex; gap:0.5rem;">
                 <button id="btn-reset" class="btn-secondary">Reset</button>
                 <button id="btn-play" class="btn-primary">Play</button>
+            </div>
+
+            <!-- Help -->
+            <div class="controls-group" style="margin-left: auto;">
+                <button class="icon-btn" id="btn-help" title="Ayuda / Atajos">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -408,9 +591,64 @@
             </div>
             <div id="viewer-container">
                 <div id="viewer"></div>
+                <!-- Features Overlays -->
+                <div id="countdown-overlay" class="countdown-overlay hidden">
+                    <span id="countdown-number">3</span>
+                </div>
             </div>
         </div>
     </main>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="btn-close-help" class="modal-close">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h2 style="font-size:1.5rem; font-weight:700; margin-bottom:1rem;">Atajos & Ayuda</h2>
+
+            <h3
+                style="color:#94a3b8; font-size:0.875rem; text-transform:uppercase; letter-spacing:0.05em; margin-top:1.5rem;">
+                Teclado</h3>
+            <table class="help-table">
+                <tr>
+                    <td><span class="key-badge">Espacio</span></td>
+                    <td>Play / Pause</td>
+                </tr>
+                <tr>
+                    <td><span class="key-badge">↑</span> / <span class="key-badge">↓</span></td>
+                    <td>Scroll Manual</td>
+                </tr>
+                <tr>
+                    <td><span class="key-badge">←</span> / <span class="key-badge">→</span></td>
+                    <td>Ajustar Velocidad</td>
+                </tr>
+                <tr>
+                    <td><span class="key-badge">Esc</span></td>
+                    <td>Salir Pantalla Completa</td>
+                </tr>
+            </table>
+
+            <h3
+                style="color:#94a3b8; font-size:0.875rem; text-transform:uppercase; letter-spacing:0.05em; margin-top:1.5rem;">
+                Iconos</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-top:0.5rem;">
+                <div style="display:flex; align-items:center; gap:0.5rem;"><svg width="20" height="20"
+                        fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"
+                            transform="scale(-1 1) translate(-24 0)" />
+                    </svg> Modo Espejo</div>
+                <div style="display:flex; align-items:center; gap:0.5rem;"><svg width="20" height="20"
+                        fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.59 8 8-3.58 8-8 8zm-.22-13h-.06c-.4 0-.72.32-.72.72v4.72c0 .35.18.68.49.86l4.15 2.49c.34.2.78.1.98-.24.21-.34.1-.79-.25-.99l-3.87-2.3V7.72c0-.4-.32-.72-.72-.72z" />
+                    </svg> Cuenta Atrás</div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // DOM Elements
@@ -428,6 +666,13 @@
 
         const mainContainer = document.querySelector('main');
 
+        // New Feature Elements
+        const btnMirror = document.getElementById('btn-mirror');
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        const btnCountdown = document.getElementById('btn-countdown');
+        const countdownOverlay = document.getElementById('countdown-overlay');
+        const countdownNumber = document.getElementById('countdown-number');
+
         // Layout buttons
         const btnLayoutSplit = document.getElementById('layout-split');
         const btnLayoutViewer = document.getElementById('layout-viewer');
@@ -436,10 +681,13 @@
 
         // State
         let isPlaying = false;
+        let isCountingDown = false;
+        let isCountdownEnabled = false;
         let speed = parseInt(speedInput.value, 10);
         let lastFrameTime = 0;
         let animationFrameId = null;
-        let preciseScrollTop = 0; // Accumulator for sub-pixel precision
+        let preciseScrollTop = 0;
+        let countdownTimer = null;
 
         // Sync Editor to Viewer
         editor.addEventListener('input', () => {
@@ -447,9 +695,14 @@
         });
 
         // Controls: Speed
-        speedInput.addEventListener('input', (e) => {
-            speed = parseInt(e.target.value, 10);
+        function updateSpeed(newSpeed) {
+            speed = Math.max(0, Math.min(300, newSpeed));
+            speedInput.value = speed;
             speedValue.textContent = speed;
+        }
+
+        speedInput.addEventListener('input', (e) => {
+            updateSpeed(parseInt(e.target.value, 10));
         });
 
         // Controls: Font Size
@@ -458,6 +711,66 @@
             viewer.style.fontSize = `${size}px`;
             fontSizeValue.textContent = `${size}px`;
         });
+
+        // Toggles
+        btnMirror.addEventListener('click', () => {
+            // Apply flip to the content container
+            viewer.classList.toggle('mirror-mode');
+            btnMirror.classList.toggle('active');
+        });
+
+        btnCountdown.addEventListener('click', () => {
+            isCountdownEnabled = !isCountdownEnabled;
+            if (isCountdownEnabled) {
+                btnCountdown.classList.add('active');
+                btnCountdown.style.opacity = '1';
+            } else {
+                btnCountdown.classList.remove('active');
+                btnCountdown.style.opacity = '0.5';
+            }
+        });
+
+        btnFullscreen.addEventListener('click', () => {
+            document.body.classList.toggle('fullscreen-mode');
+            btnFullscreen.classList.toggle('active');
+        });
+
+        // Help Modal Logic
+        const btnHelp = document.getElementById('btn-help');
+        const helpModal = document.getElementById('help-modal');
+        const btnCloseHelp = document.getElementById('btn-close-help');
+
+        function toggleHelp(show) {
+            if (show) {
+                helpModal.classList.remove('hidden');
+            } else {
+                helpModal.classList.add('hidden');
+            }
+        }
+
+        btnHelp.addEventListener('click', () => toggleHelp(true));
+        btnCloseHelp.addEventListener('click', () => toggleHelp(false));
+
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) toggleHelp(false);
+        });
+
+        // Escape key to exit fullscreen OR close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                // Priority 1: Close Modal
+                if (!helpModal.classList.contains('hidden')) {
+                    toggleHelp(false);
+                    return;
+                }
+                // Priority 2: Exit Fullscreen
+                if (document.body.classList.contains('fullscreen-mode')) {
+                    document.body.classList.remove('fullscreen-mode');
+                    btnFullscreen.classList.remove('active');
+                }
+            }
+        });
+
 
         // Layout Switching
         function setLayout(mode, activeBtn) {
@@ -474,11 +787,54 @@
         btnPlay.addEventListener('click', togglePlay);
 
         function togglePlay() {
+            if (isCountingDown) {
+                cancelCountdown();
+                return;
+            }
+
             if (isPlaying) {
                 pause();
             } else {
-                play();
+                if (isCountdownEnabled) {
+                    startCountdown();
+                } else {
+                    play();
+                }
             }
+        }
+
+        function startCountdown() {
+            isCountingDown = true;
+            countdownOverlay.classList.remove('hidden');
+            let count = 3;
+            countdownNumber.textContent = count;
+
+            btnPlay.textContent = 'Cancel';
+            btnPlay.style.background = 'transparent';
+            btnPlay.style.border = '1px solid var(--danger-color)';
+            btnPlay.style.color = 'var(--danger-color)';
+
+            countdownTimer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownNumber.textContent = count;
+                } else {
+                    clearInterval(countdownTimer);
+                    countdownOverlay.classList.add('hidden');
+                    isCountingDown = false;
+                    play();
+                }
+            }, 1000);
+        }
+
+        function cancelCountdown() {
+            clearInterval(countdownTimer);
+            isCountingDown = false;
+            countdownOverlay.classList.add('hidden');
+            btnPlay.textContent = 'Play';
+            btnPlay.style.background = 'var(--primary-gradient)';
+            btnPlay.style.border = 'none';
+            btnPlay.style.color = 'white';
         }
 
         function play() {
@@ -486,12 +842,12 @@
             isPlaying = true;
             btnPlay.textContent = 'Pause';
             btnPlay.style.background = 'transparent';
-            btnPlay.style.border = '1px solid var(--danger-color)'; // Red border
+            btnPlay.style.border = '1px solid var(--danger-color)';
             btnPlay.style.color = 'var(--danger-color)';
 
-            // Start the loop
+            // Start loop
             lastFrameTime = performance.now();
-            preciseScrollTop = viewerContainer.scrollTop; // Sync with current DOM position
+            preciseScrollTop = viewerContainer.scrollTop;
             animationFrameId = requestAnimationFrame(loop);
         }
 
@@ -499,7 +855,6 @@
             if (!isPlaying) return;
             isPlaying = false;
             btnPlay.textContent = 'Play';
-            // Restore primary style
             btnPlay.style.background = 'var(--primary-gradient)';
             btnPlay.style.border = 'none';
             btnPlay.style.color = 'white';
@@ -512,6 +867,7 @@
 
         // Reset Control
         btnReset.addEventListener('click', () => {
+            if (isCountingDown) cancelCountdown();
             pause();
             viewerContainer.scrollTop = 0;
             preciseScrollTop = 0;
@@ -521,46 +877,62 @@
         function loop(timestamp) {
             if (!isPlaying) return;
 
-            const deltaTime = (timestamp - lastFrameTime) / 1000; // in seconds
+            const deltaTime = (timestamp - lastFrameTime) / 1000;
             lastFrameTime = timestamp;
 
-            // Check if user manually scrolled (difference between expected and actual is significant)
-            // We use a threshold of 1px to avoid micro-jitters
+            // Sync check
             if (Math.abs(viewerContainer.scrollTop - preciseScrollTop) > 1) {
                 preciseScrollTop = viewerContainer.scrollTop;
             }
 
-            // Check if we reached the end
             const maxScroll = viewerContainer.scrollHeight - viewerContainer.clientHeight;
 
-            // Allow a small buffer (1px)
             if (viewerContainer.scrollTop >= maxScroll - 1 && maxScroll > 0) {
                 pause();
                 return;
             }
 
-            // Scroll
             const pixelsToScroll = speed * deltaTime;
-            preciseScrollTop += pixelsToScroll; // Accumulate in float
-            viewerContainer.scrollTop = preciseScrollTop; // Apply to DOM
+            preciseScrollTop += pixelsToScroll;
+            viewerContainer.scrollTop = preciseScrollTop;
 
-            // Continue loop
             animationFrameId = requestAnimationFrame(loop);
         }
 
-        // Initial render if there's any text
-        viewer.textContent = editor.value;
-        // Set initial font size
-        viewer.style.fontSize = `${fontSizeInput.value}px`;
-
-
-        // Spacebar shortcut
+        // Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && document.activeElement !== editor) {
-                e.preventDefault();
-                togglePlay();
+            // Ignore if in editor
+            if (document.activeElement === editor) return;
+
+            switch (e.code) {
+                case 'Space':
+                    e.preventDefault();
+                    togglePlay();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    viewerContainer.scrollTop -= 50;
+                    preciseScrollTop = viewerContainer.scrollTop;
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    viewerContainer.scrollTop += 50;
+                    preciseScrollTop = viewerContainer.scrollTop;
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    updateSpeed(speed - 5);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    updateSpeed(speed + 5);
+                    break;
             }
         });
+
+        // Initial render
+        viewer.textContent = editor.value;
+        viewer.style.fontSize = `${fontSizeInput.value}px`;
     </script>
 </body>
 
